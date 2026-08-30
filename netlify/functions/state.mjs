@@ -90,7 +90,15 @@ async function loadState(store) {
 export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') return respond(200, {});
 
-  const store = getStore(STORE_NAME);
+  // Netlify's automatic Blobs configuration doesn't always get injected
+  // depending on deploy path. Fall back to manual config using
+  // NETLIFY_SITE_ID / NETLIFY_API_TOKEN if they're set.
+  const storeOptions = { name: STORE_NAME };
+  if (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_API_TOKEN) {
+    storeOptions.siteID = process.env.NETLIFY_SITE_ID;
+    storeOptions.token = process.env.NETLIFY_API_TOKEN;
+  }
+  const store = getStore(storeOptions);
 
   if (event.httpMethod === 'GET') {
     const state = await loadState(store);
