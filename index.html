@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matt's Alright Discord Bingo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-top: #2c0b06;
+    --bg-mid: #180907;
+    --bg-bottom: #0a0605;
+    --panel: #1c1310;
+    --panel-edge: #402c22;
+    --cream: #E9E1CF;
+    --cream-dim: #B9A99A;
+    --blood: #7c2015;
+    --blood-bright: #b3402a;
+    --caption-red: #c1543b;
+    --bronze: #c79a5b;
+    --pending: #7a5a24;
+    --pending-edge: #b98a3a;
+  }
+
+  * { box-sizing: border-box; }
+  html, body{ height: 100%; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    position: relative;
+    color: var(--cream);
+    font-family: 'Inter', sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 48px 16px 64px;
+    isolation: isolate;
+  }
+
+  .scene{
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(140,30,18,0.45), transparent 60%),
+      linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 45%, var(--bg-bottom) 100%);
+    overflow: hidden;
+  }
+  .scene svg{ position: absolute; bottom: 0; left: 0; width: 100%; height: 55%; opacity: 0.9; }
+  .scene::after{
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 70% at 50% 40%, transparent 40%, rgba(0,0,0,0.55) 100%);
+    pointer-events: none;
+  }
+  .grain{
+    position: fixed; inset: 0; z-index: -1;
+    opacity: 0.08; mix-blend-mode: overlay; pointer-events: none;
+  }
+
+  .masthead{ width:100%; max-width: 640px; text-align:center; margin-bottom: 20px; }
+
+  h1{
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: clamp(38px, 8vw, 64px);
+    line-height: 1.05;
+    margin: 0 0 14px;
+    color: var(--cream);
+    text-shadow: 0 2px 24px rgba(0,0,0,0.6);
+  }
+
+  .byline{
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--caption-red);
+    margin: 0 0 20px;
+  }
+
+  .subhead{ color: var(--cream-dim); font-size: 15px; max-width: 440px; margin: 0 auto; line-height: 1.5; }
+
+  .identity-bar{
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 24px 0 14px;
+    font-size: 13px;
+    color: var(--cream-dim);
+  }
+
+  .identity-bar .who{ display:flex; align-items:center; gap: 8px; }
+  .identity-bar .who strong{ color: var(--cream); font-weight: 600; }
+
+  .link-btn{
+    background: none; border: none; color: var(--cream-dim);
+    font-family: 'Inter', sans-serif; font-size: 12px;
+    text-decoration: underline; text-underline-offset: 3px;
+    cursor: pointer; padding: 0;
+  }
+  .link-btn:hover{ color: var(--caption-red); }
+
+  .status-bar{
+    width: 100%; max-width: 640px;
+    display:flex; align-items:center; justify-content: space-between;
+    gap: 12px; margin-bottom: 14px;
+  }
+
+  .status-msg{ font-size: 14px; letter-spacing: 0.02em; color: var(--cream-dim); min-height: 20px; }
+  .status-msg.win{ color: var(--caption-red); font-weight: 600; }
+
+  .live-dot{
+    display:inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: #6d8c4a; margin-right: 6px; vertical-align: 1px;
+  }
+  .live-dot.stale{ background: var(--caption-red); }
+
+  button{
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 9px 16px; border-radius: 2px;
+    border: 1px solid var(--panel-edge);
+    background: var(--panel); color: var(--cream);
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.1s ease, background 0.15s ease;
+  }
+  button:hover{ border-color: var(--caption-red); }
+  button:active{ transform: scale(0.97); }
+  button:disabled{ opacity: 0.45; cursor: not-allowed; }
+  button.primary{ background: var(--blood); border-color: var(--blood); }
+  button.primary:hover{ background: var(--blood-bright); border-color: var(--blood-bright); }
+  button.small{ padding: 6px 10px; font-size: 11px; }
+  button.approve{ background: #3f5a2c; border-color: #3f5a2c; }
+  button.approve:hover{ background: #4d6f36; border-color: #4d6f36; }
+  button.deny{ background: var(--blood); border-color: var(--blood); }
+
+  .card{
+    width: 100%; max-width: 640px;
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 5px; background: var(--panel-edge); padding: 5px; border-radius: 4px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+  }
+
+  .cell{
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.03), transparent 55%), var(--panel);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    padding: 8px; cursor: pointer;
+    border: 1px solid rgba(64,44,34,0.6);
+    transition: background 0.15s ease, border-color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cell:hover{ border-color: var(--caption-red); }
+  .cell.disabled{ cursor: default; }
+
+  .cell span.label{
+    font-size: clamp(10px, 2.6vw, 13px);
+    line-height: 1.3; color: var(--cream-dim); font-weight: 500; white-space: pre-line;
+  }
+  .cell span.tag{
+    position:absolute; bottom: 4px; left: 4px; right: 4px;
+    font-size: 9px; letter-spacing: 0.02em; color: var(--pending-edge);
+    line-height: 1.2;
+  }
+
+  .cell.free span.label{
+    font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 600;
+    color: var(--bronze); font-size: clamp(13px, 3.4vw, 17px);
+  }
+
+  .cell.pending{ background: var(--pending); border-color: var(--pending-edge); }
+  .cell.pending span.label{ color: var(--cream); }
+
+  .cell.marked{
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.05), transparent 60%), var(--blood);
+    border-color: var(--blood-bright);
+  }
+  .cell.marked span.label{ color: var(--cream); }
+  .cell.marked::after{
+    content: ""; position: absolute; inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(193,84,59,0.5), inset 0 0 20px rgba(0,0,0,0.4);
+  }
+
+  .cell.win-line{ background: linear-gradient(160deg, var(--bronze), #8a6432); border-color: var(--bronze); }
+  .cell.win-line span.label{ color: #1c1310; font-weight: 600; }
+  .cell.win-line span.tag{ color: #1c1310; }
+
+  .footer-note{
+    max-width: 640px; width: 100%; margin-top: 22px;
+    font-size: 13px; color: var(--cream-dim); text-align: center; line-height: 1.6;
+  }
+
+  .overlay{
+    position: fixed; inset: 0; background: rgba(5, 3, 2, 0.8);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px; z-index: 10;
+  }
+  .overlay.open{ display: flex; }
+
+  .panel{
+    width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto;
+    background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 4px;
+    padding: 24px; box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+
+  .panel h2{
+    font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 600;
+    font-size: 26px; margin: 0 0 4px;
+  }
+
+  .panel .help{ color: var(--cream-dim); font-size: 13px; line-height: 1.5; margin: 0 0 14px; }
+
+  .panel input[type="text"], .panel input[type="password"]{
+    width: 100%; background: var(--bg-bottom, #0a0605); border: 1px solid var(--panel-edge);
+    border-radius: 4px; color: var(--cream); font-family: 'Inter', sans-serif;
+    font-size: 14px; padding: 10px 12px; margin-bottom: 10px;
+  }
+  .panel input:focus{ outline: none; border-color: var(--caption-red); }
+
+  .panel textarea{
+    width: 100%; min-height: 260px; background: #0a0605; border: 1px solid var(--panel-edge);
+    border-radius: 4px; color: var(--cream); font-family: 'Inter', sans-serif;
+    font-size: 14px; line-height: 1.6; padding: 12px; resize: vertical;
+  }
+  .panel textarea:focus{ outline: none; border-color: var(--caption-red); }
+
+  .count{ font-size: 12px; color: var(--cream-dim); margin: 8px 0 0; }
+  .count.error{ color: var(--caption-red); }
+
+  .actions{ display: flex; justify-content: space-between; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+  .actions .group{ display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .form-error{ color: var(--caption-red); font-size: 12px; margin: -4px 0 10px; min-height: 14px; }
+
+  .tabs{ display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--panel-edge); }
+  .tab{
+    background: none; border: none; color: var(--cream-dim);
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 8px 4px; margin-right: 16px; cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .tab.active{ color: var(--cream); border-bottom-color: var(--caption-red); }
+
+  .tab-panel{ display: none; }
+  .tab-panel.active{ display: block; }
+
+  .claim-list{ display: flex; flex-direction: column; gap: 8px; }
+  .claim-item{
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: #0a0605; border: 1px solid var(--panel-edge); border-radius: 4px;
+    padding: 10px 12px;
+  }
+  .claim-item .claim-text{ font-size: 13px; line-height: 1.4; }
+  .claim-item .claim-text b{ color: var(--bronze); }
+  .claim-item .claim-buttons{ display: flex; gap: 6px; flex-shrink: 0; }
+  .empty-note{ font-size: 13px; color: var(--cream-dim); padding: 8px 0; }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition: none !important; } }
+</style>
+</head>
+<body>
+
+  <div class="scene" aria-hidden="true">
+    <svg viewBox="0 0 1000 500" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ridgeFar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4a1c12"/>
+          <stop offset="100%" stop-color="#1c0d09"/>
+        </linearGradient>
+        <linearGradient id="ridgeNear" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1e100a"/>
+          <stop offset="100%" stop-color="#0a0605"/>
+        </linearGradient>
+        <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3a1108" stop-opacity="0.7"/>
+          <stop offset="100%" stop-color="#0a0605" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <polygon points="0,260 90,190 180,230 260,150 340,210 430,140 520,200 610,160 700,220 790,170 880,230 1000,180 1000,500 0,500" fill="url(#ridgeFar)" opacity="0.55"/>
+      <polygon points="0,340 70,300 150,330 230,280 320,320 410,290 500,330 600,300 700,340 800,310 900,335 1000,310 1000,500 0,500" fill="url(#ridgeNear)"/>
+      <rect x="0" y="330" width="1000" height="170" fill="url(#waterGrad)"/>
+    </svg>
+  </div>
+  <svg class="grain" xmlns="http://www.w3.org/2000/svg">
+    <filter id="noiseFilter">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+    </filter>
+    <rect width="100%" height="100%" filter="url(#noiseFilter)"/>
+  </svg>
+
+  <div class="masthead">
+    <h1>Matt's Alright<br>Discord Bingo</h1>
+    <p class="byline">Voice Chat Bingo</p>
+    <p class="subhead">Hear it in VC, flag the square. An admin confirms it before it counts.</p>
+  </div>
+
+  <div class="identity-bar">
+    <div class="who">Playing as <strong id="whoName">—</strong></div>
+    <button class="link-btn" id="changeNameBtn">Change name</button>
+  </div>
+
+  <div class="status-bar">
+    <p class="status-msg" id="statusMsg"><span class="live-dot" id="liveDot"></span>Loading the board…</p>
+    <button class="link-btn" id="adminLinkBtn">Admin</button>
+  </div>
+
+  <div class="card" id="card"></div>
+
+  <p class="footer-note">
+    Flag a square when you hear it. It shows up amber as "pending" for everyone until an admin approves or denies it.
+  </p>
+
+  <!-- Name gate -->
+  <div class="overlay" id="nameOverlay">
+    <div class="panel">
+      <h2>Who's playing?</h2>
+      <p class="help">This is just the name attached to squares you flag — no login, no password.</p>
+      <input type="text" id="nameInput" maxlength="40" placeholder="Display name">
+      <p class="form-error" id="nameError"></p>
+      <div class="actions">
+        <div class="group"></div>
+        <div class="group">
+          <button id="nameSaveBtn" class="primary">Start playing</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Claim confirm -->
+  <div class="overlay" id="claimOverlay">
+    <div class="panel">
+      <h2>Flag this square?</h2>
+      <p class="help" id="claimText"></p>
+      <p class="form-error" id="claimError"></p>
+      <div class="actions">
+        <div class="group"></div>
+        <div class="group">
+          <button id="claimCancelBtn">Cancel</button>
+          <button id="claimConfirmBtn" class="primary">Flag it</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin panel -->
+  <div class="overlay" id="adminOverlay">
+    <div class="panel">
+      <h2>Admin</h2>
+
+      <div id="adminLocked">
+        <p class="help">Enter the admin passcode to review flagged squares and edit the phrase list.</p>
+        <input type="password" id="passInput" placeholder="Passcode">
+        <p class="form-error" id="passError"></p>
+        <div class="actions">
+          <div class="group"></div>
+          <div class="group">
+            <button id="passCancelBtn">Cancel</button>
+            <button id="passSubmitBtn" class="primary">Unlock</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="adminUnlocked" style="display:none;">
+        <div class="tabs">
+          <button class="tab active" data-tab="claims">Pending (<span id="pendingCount">0</span>)</button>
+          <button class="tab" data-tab="phrases">Phrases</button>
+        </div>
+
+        <div class="tab-panel active" id="tabClaims">
+          <div class="claim-list" id="claimList"></div>
+        </div>
+
+        <div class="tab-panel" id="tabPhrases">
+          <p class="help">One phrase per line. Need at least 24 — saving deals a brand new card for everyone.</p>
+          <textarea id="phrasesTextarea" spellcheck="false"></textarea>
+          <p class="count" id="phrasesCount"></p>
+          <p class="form-error" id="phrasesError"></p>
+          <div class="actions">
+            <div class="group">
+              <button id="newCardBtn">New card, same phrases</button>
+              <button id="clearMarksBtn">Clear all marks</button>
+            </div>
+            <div class="group">
+              <button id="savePhrasesBtn" class="primary">Save &amp; new card</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:24px; border-top:1px solid var(--panel-edge); padding-top:14px;">
+          <div class="group"></div>
+          <div class="group">
+            <button id="adminCloseBtn">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const API = '/api/state';
+  const MIN_PHRASES = 24;
+
+  let latest = { cells: [], claims: [], phrases: [] };
+  let myName = sessionStorage.getItem('bingoName') || '';
+  let adminPasscode = sessionStorage.getItem('bingoAdminPass') || null;
+  let claimTargetIndex = null;
+  let pollFailures = 0;
+
+  const cardEl = document.getElementById('card');
+  const statusEl = document.getElementById('statusMsg');
+  const liveDot = document.getElementById('liveDot');
+  const whoNameEl = document.getElementById('whoName');
+
+  // ---------- Networking ----------
+
+  async function apiGet(){
+    const res = await fetch(API, { cache: 'no-store' });
+    if(!res.ok) throw new Error('Request failed');
+    return res.json();
+  }
+
+  async function apiPost(payload){
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  }
+
+  async function refresh(){
+    try{
+      latest = await apiGet();
+      pollFailures = 0;
+      liveDot.classList.remove('stale');
+      render();
+      renderAdminClaims();
+    } catch(e){
+      pollFailures++;
+      liveDot.classList.add('stale');
+      if(pollFailures === 1){
+        setStatus('Trouble reaching the shared board — retrying…', false);
+      }
+    }
+  }
+
+  // ---------- Rendering ----------
+
+  function render(){
+    cardEl.innerHTML = '';
+    latest.cells.forEach((cell, i) => {
+      const pendingClaim = latest.claims.find(c => c.index === i);
+      const div = document.createElement('div');
+      let cls = 'cell';
+      if(cell.isFree) cls += ' free';
+      if(cell.marked) cls += ' marked';
+      else if(pendingClaim) cls += ' pending disabled';
+
+      div.className = cls;
+
+      const span = document.createElement('span');
+      span.className = 'label';
+      span.textContent = cell.label;
+      div.appendChild(span);
+
+      if(cell.marked && cell.approvedBy){
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'called by ' + cell.approvedBy;
+        div.appendChild(tag);
+      } else if(pendingClaim){
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'pending — ' + pendingClaim.name;
+        div.appendChild(tag);
+      }
+
+      if(!cell.isFree && !cell.marked && !pendingClaim){
+        div.addEventListener('click', () => openClaim(i));
+      }
+
+      cardEl.appendChild(div);
+    });
+    highlightWins();
+    updateStatus();
+  }
+
+  function getLines(){
+    const lines = [];
+    for(let r = 0; r < 5; r++) lines.push([0,1,2,3,4].map(c => r*5 + c));
+    for(let c = 0; c < 5; c++) lines.push([0,1,2,3,4].map(r => r*5 + c));
+    lines.push([0,6,12,18,24]);
+    lines.push([4,8,12,16,20]);
+    return lines;
+  }
+
+  function highlightWins(){
+    const winning = new Set();
+    getLines().forEach(line => {
+      if(line.every(idx => latest.cells[idx] && latest.cells[idx].marked)){
+        line.forEach(idx => winning.add(idx));
+      }
+    });
+    if(winning.size){
+      const els = cardEl.children;
+      winning.forEach(idx => els[idx].classList.add('win-line'));
+      return true;
+    }
+    return false;
+  }
+
+  function updateStatus(){
+    const hasWin = getLines().some(line => line.every(idx => latest.cells[idx] && latest.cells[idx].marked));
+    if(hasWin){
+      setStatus('BINGO — Matt really said it.', true);
+    } else {
+      setStatus('Flag a square when you hear it.', false);
+    }
+  }
+
+  function setStatus(text, win){
+    statusEl.innerHTML = '<span class="live-dot' + (pollFailures ? ' stale' : '') + '" id="liveDot"></span>' + text;
+    statusEl.classList.toggle('win', win);
+  }
+
+  // ---------- Name gate ----------
+
+  const nameOverlay = document.getElementById('nameOverlay');
+  const nameInput = document.getElementById('nameInput');
+  const nameError = document.getElementById('nameError');
+
+  function ensureName(onReady){
+    if(myName){ onReady(); return; }
+    nameInput.value = '';
+    nameError.textContent = '';
+    nameOverlay.classList.add('open');
+    nameOverlay.dataset.onReady = 'pending';
+    nameOverlay._callback = onReady;
+    nameInput.focus();
+  }
+
+  function saveName(){
+    const v = nameInput.value.trim().slice(0, 40);
+    if(!v){
+      nameError.textContent = 'Enter a name to continue.';
+      return;
+    }
+    myName = v;
+    sessionStorage.setItem('bingoName', myName);
+    whoNameEl.textContent = myName;
+    nameOverlay.classList.remove('open');
+    const cb = nameOverlay._callback;
+    nameOverlay._callback = null;
+    if(cb) cb();
+  }
+
+  document.getElementById('nameSaveBtn').addEventListener('click', saveName);
+  nameInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') saveName(); });
+
+  document.getElementById('changeNameBtn').addEventListener('click', () => {
+    myName = '';
+    ensureName(() => {});
+  });
+
+  whoNameEl.textContent = myName || '—';
+
+  // ---------- Claim flow ----------
+
+  const claimOverlay = document.getElementById('claimOverlay');
+  const claimText = document.getElementById('claimText');
+  const claimError = document.getElementById('claimError');
+
+  function openClaim(index){
+    ensureName(() => {
+      claimTargetIndex = index;
+      const cell = latest.cells[index];
+      claimText.textContent = '"' + cell.label.replace(/\n/g, ' ') + '" — flag this as ' + myName + '?';
+      claimError.textContent = '';
+      claimOverlay.classList.add('open');
+    });
+  }
+
+  document.getElementById('claimCancelBtn').addEventListener('click', () => {
+    claimOverlay.classList.remove('open');
+    claimTargetIndex = null;
+  });
+
+  document.getElementById('claimConfirmBtn').addEventListener('click', async () => {
+    if(claimTargetIndex === null) return;
+    try{
+      await apiPost({ action: 'claim', name: myName, index: claimTargetIndex });
+      claimOverlay.classList.remove('open');
+      claimTargetIndex = null;
+      refresh();
+    } catch(e){
+      claimError.textContent = e.message;
+    }
+  });
+
+  // ---------- Admin panel ----------
+
+  const adminOverlay = document.getElementById('adminOverlay');
+  const adminLocked = document.getElementById('adminLocked');
+  const adminUnlocked = document.getElementById('adminUnlocked');
+  const passInput = document.getElementById('passInput');
+  const passError = document.getElementById('passError');
+
+  document.getElementById('adminLinkBtn').addEventListener('click', () => {
+    adminOverlay.classList.add('open');
+    if(adminPasscode){
+      showUnlocked();
+    } else {
+      showLocked();
+    }
+  });
+
+  document.getElementById('passCancelBtn').addEventListener('click', () => {
+    adminOverlay.classList.remove('open');
+  });
+
+  document.getElementById('adminCloseBtn').addEventListener('click', () => {
+    adminOverlay.classList.remove('open');
+  });
+
+  function showLocked(){
+    adminLocked.style.display = 'block';
+    adminUnlocked.style.display = 'none';
+    passInput.value = '';
+    passError.textContent = '';
+    passInput.focus();
+  }
+
+  function showUnlocked(){
+    adminLocked.style.display = 'none';
+    adminUnlocked.style.display = 'block';
+    renderAdminClaims();
+    phrasesTextarea.value = latest.phrases.join('\n');
+    updatePhrasesCount();
+  }
+
+  async function tryPasscode(pass){
+    // Verify by attempting a harmless admin call (denying a non-existent claim id is a safe probe... 
+    // instead we just store it and let the first real action validate it).
+    adminPasscode = pass;
+    sessionStorage.setItem('bingoAdminPass', pass);
+  }
+
+  document.getElementById('passSubmitBtn').addEventListener('click', async () => {
+    const v = passInput.value;
+    if(!v){ passError.textContent = 'Enter the passcode.'; return; }
+    await tryPasscode(v);
+    // Validate immediately against the server with a no-op-ish call.
+    try{
+      await apiPost({ action: 'deny', passcode: adminPasscode, claimId: '__probe__' });
+      showUnlocked();
+    } catch(e){
+      if(e.message.includes('passcode')){
+        passError.textContent = 'Wrong passcode.';
+        adminPasscode = null;
+        sessionStorage.removeItem('bingoAdminPass');
+      } else {
+        // deny on a missing claim id still means the passcode was accepted
+        showUnlocked();
+      }
+    }
+  });
+
+  passInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('passSubmitBtn').click(); });
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab' + tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)).classList.add('active');
+    });
+  });
+
+  // Pending claims list
+  const claimList = document.getElementById('claimList');
+  const pendingCountEl = document.getElementById('pendingCount');
+
+  function renderAdminClaims(){
+    pendingCountEl.textContent = latest.claims.length;
+    if(adminOverlay.classList.contains('open') && adminUnlocked.style.display !== 'none'){
+      claimList.innerHTML = '';
+      if(!latest.claims.length){
+        claimList.innerHTML = '<p class="empty-note">Nothing waiting on approval.</p>';
+        return;
+      }
+      latest.claims.forEach(claim => {
+        const row = document.createElement('div');
+        row.className = 'claim-item';
+        row.innerHTML =
+          '<div class="claim-text"><b>' + escapeHtml(claim.name) + '</b> flagged "' + escapeHtml(claim.label.replace(/\n/g, ' ')) + '"</div>' +
+          '<div class="claim-buttons"></div>';
+        const btnWrap = row.querySelector('.claim-buttons');
+
+        const approveBtn = document.createElement('button');
+        approveBtn.className = 'small approve';
+        approveBtn.textContent = 'Approve';
+        approveBtn.addEventListener('click', () => adminAction('approve', { claimId: claim.id }));
+
+        const denyBtn = document.createElement('button');
+        denyBtn.className = 'small deny';
+        denyBtn.textContent = 'Deny';
+        denyBtn.addEventListener('click', () => adminAction('deny', { claimId: claim.id }));
+
+        btnWrap.appendChild(approveBtn);
+        btnWrap.appendChild(denyBtn);
+        claimList.appendChild(row);
+      });
+    }
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  async function adminAction(action, extra){
+    try{
+      await apiPost({ action, passcode: adminPasscode, ...extra });
+      await refresh();
+      renderAdminClaims();
+    } catch(e){
+      alert(e.message);
+    }
+  }
+
+  // Phrases tab
+  const phrasesTextarea = document.getElementById('phrasesTextarea');
+  const phrasesCount = document.getElementById('phrasesCount');
+  const phrasesError = document.getElementById('phrasesError');
+
+  function updatePhrasesCount(){
+    const lines = phrasesTextarea.value.split('\n').map(l => l.trim()).filter(Boolean);
+    phrasesCount.textContent = lines.length + ' phrase' + (lines.length === 1 ? '' : 's') +
+      (lines.length < MIN_PHRASES ? ' — need at least ' + MIN_PHRASES : '');
+    phrasesCount.classList.toggle('error', lines.length < MIN_PHRASES);
+    return lines;
+  }
+
+  phrasesTextarea.addEventListener('input', updatePhrasesCount);
+
+  document.getElementById('savePhrasesBtn').addEventListener('click', async () => {
+    const lines = updatePhrasesCount();
+    if(lines.length < MIN_PHRASES){
+      phrasesError.textContent = 'Need at least ' + MIN_PHRASES + ' phrases.';
+      return;
+    }
+    phrasesError.textContent = '';
+    await adminAction('setPhrases', { phrases: lines });
+  });
+
+  document.getElementById('newCardBtn').addEventListener('click', () => adminAction('newCard', {}));
+  document.getElementById('clearMarksBtn').addEventListener('click', () => adminAction('clearMarks', {}));
+
+  // ---------- Boot ----------
+
+  refresh();
+  setInterval(refresh, 4000);
+</script>
+
+</body>
+</html>
